@@ -53,7 +53,7 @@ namespace RawFileTypePlugin
         {
             get
             {
-                return new Uri("http://www.getpaint.net/redirect/plugins.html");
+                return new Uri("https://forums.getpaint.net/index.php?/topic/31998-raw-filetype");
             }
         }
     }
