@@ -4,7 +4,7 @@
 //
 // This software is provided under the MIT License:
 //   Copyright (C) 2015-2017 Nicholas Hayes
-// 
+//
 // See LICENSE.txt for complete licensing and attribution information.
 //
 /////////////////////////////////////////////////////////////////////////////////
@@ -19,7 +19,7 @@ namespace RawFileTypePlugin
     {
         public string Author
         {
-            get 
+            get
             {
                 return ((AssemblyCompanyAttribute)(typeof(RawFileType).Assembly.GetCustomAttributes(typeof(AssemblyCompanyAttribute), false)[0])).Company;
             }
@@ -27,7 +27,7 @@ namespace RawFileTypePlugin
 
         public string Copyright
         {
-            get 
+            get
             {
                 return ((AssemblyCopyrightAttribute)(typeof(RawFileType).Assembly.GetCustomAttributes(typeof(AssemblyCopyrightAttribute), false)[0])).Copyright;
             }
@@ -35,7 +35,7 @@ namespace RawFileTypePlugin
 
         public string DisplayName
         {
-            get 
+            get
             {
                 return "Raw FileType";
             }
@@ -43,7 +43,7 @@ namespace RawFileTypePlugin
 
         public Version Version
         {
-            get 
+            get
             {
                 return typeof(RawFileType).Assembly.GetName().Version;
             }
@@ -51,8 +51,8 @@ namespace RawFileTypePlugin
 
         public Uri WebsiteUri
         {
-            get 
-            { 
+            get
+            {
                 return new Uri("http://www.getpaint.net/redirect/plugins.html");
             }
         }
