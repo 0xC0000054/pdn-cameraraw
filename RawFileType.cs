@@ -80,11 +80,13 @@ namespace RawFileTypePlugin
             string options = GetDCRawOptions();
             // Set the -c option to tell DCRaw that the image data should be written to standard output.
             string arguments = string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0} -c \"{1}\"", options, file);
-            ProcessStartInfo startInfo = new ProcessStartInfo(DCRawPath, arguments);
-            startInfo.UseShellExecute = false;
-            startInfo.CreateNoWindow = true;
-            startInfo.RedirectStandardOutput = true;
-            startInfo.RedirectStandardError = true;
+            ProcessStartInfo startInfo = new ProcessStartInfo(DCRawPath, arguments)
+            {
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            };
             bool useTIFF = options.Contains("-T");
 
             using (Process process = new Process())
