@@ -311,7 +311,7 @@ namespace RawFileTypePlugin
         {
             if (stream == null)
             {
-                throw new ArgumentNullException("stream");
+                throw new ArgumentNullException(nameof(stream));
             }
 
             ushort format = ReadUInt16BigEndian(stream);
