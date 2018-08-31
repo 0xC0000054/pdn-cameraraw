@@ -10,7 +10,7 @@ A [DCRaw](http://www.cybercom.net/~dcoffin/dcraw/)-based camera raw filetype plu
   Paint.NET Version |  FileTypes Folder Location
   --------|----------
   Classic | C:\Program Files\Paint.NET\FileTypes    
-  Microsoft Store | My Documents\paint.net App Files\FileTypes
+  Microsoft Store | Documents\paint.net App Files\FileTypes
   
 3. Restart Paint.NET.
 
