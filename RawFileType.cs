@@ -53,14 +53,9 @@ namespace RawFileTypePlugin
 
             using (StreamReader reader = new StreamReader(OptionsFilePath, System.Text.Encoding.UTF8))
             {
-                while (true)
+                string line;
+                while ((line = reader.ReadLine()) != null)
                 {
-                    string line = reader.ReadLine();
-                    if (line == null)
-                    {
-                        break;
-                    }
-
                     string trimmed = RemoveCommentsAndWhiteSpace(line);
                     if (trimmed.Length > 0)
                     {
