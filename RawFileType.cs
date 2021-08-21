@@ -21,8 +21,8 @@ namespace RawFileTypePlugin
     [PluginSupportInfo(typeof(PluginSupportInfo))]
     public sealed class RawFileType : FileType
     {
-        private static readonly string DCRawPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "dcraw.exe");
-        private static readonly string DCRawOptionsPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "RawFileTypeOptions.txt");
+        private static readonly string ExecutablePath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "dcraw_emu.exe");
+        private static readonly string OptionsFilePath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "RawFileTypeOptions.txt");
 
         private const int BufferSize = 4096;
 
@@ -51,7 +51,7 @@ namespace RawFileTypePlugin
         {
             string options = string.Empty;
 
-            using (StreamReader reader = new StreamReader(DCRawOptionsPath, System.Text.Encoding.UTF8))
+            using (StreamReader reader = new StreamReader(OptionsFilePath, System.Text.Encoding.UTF8))
             {
                 while (true)
                 {
@@ -78,9 +78,10 @@ namespace RawFileTypePlugin
             Document doc = null;
 
             string options = GetDCRawOptions();
-            // Set the -c option to tell DCRaw that the image data should be written to standard output.
-            string arguments = string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0} -c \"{1}\"", options, file);
-            ProcessStartInfo startInfo = new ProcessStartInfo(DCRawPath, arguments)
+            // Set the -Z - option to tell the LibRaw dcraw-emu example program
+            // that the image data should be written to standard output.
+            string arguments = string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0} -Z - \"{1}\"", options, file);
+            ProcessStartInfo startInfo = new ProcessStartInfo(ExecutablePath, arguments)
             {
                 UseShellExecute = false,
                 CreateNoWindow = true,
@@ -118,7 +119,7 @@ namespace RawFileTypePlugin
             string tempFile = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             try
             {
-                // Write the input stream to a temporary file for DCRaw to load.
+                // Write the input stream to a temporary file for LibRaw to load.
                 using (FileStream output = new FileStream(tempFile, FileMode.Create, FileAccess.Write, FileShare.None, BufferSize))
                 {
                     output.SetLength(input.Length);
