@@ -120,7 +120,7 @@ namespace RawFileTypePlugin
                     output.SetLength(input.Length);
                     byte[] buffer = new byte[BufferSize];
 
-                    int bytesRead = 0;
+                    int bytesRead;
                     while ((bytesRead = input.Read(buffer, 0, buffer.Length)) > 0)
                     {
                         output.Write(buffer, 0, bytesRead);
