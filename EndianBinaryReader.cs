@@ -523,8 +523,13 @@ namespace RawFileTypePlugin
         {
             if (stream is null)
             {
-                throw new ObjectDisposedException(nameof(EndianBinaryReader));
+                ThrowObjectDisposedException();
             }
+        }
+
+        private static void ThrowObjectDisposedException()
+        {
+            throw new ObjectDisposedException(nameof(EndianBinaryReader));
         }
     }
 }
