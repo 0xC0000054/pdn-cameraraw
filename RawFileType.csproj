@@ -50,6 +50,9 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="EmptyArray.cs" />
+    <Compile Include="EndianBinaryReader.cs" />
+    <Compile Include="Endianess.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="PixMapReader.cs" />
     <Compile Include="PluginSupportInfo.cs" />

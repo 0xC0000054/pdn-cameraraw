@@ -15,40 +15,123 @@ using System.IO;
 
 namespace RawFileTypePlugin
 {
-    internal static class PixMapReader
+    internal sealed class PixMapReader : IDisposable
     {
         private const ushort GrayscaleBinary = 0x5035;
         private const ushort ColorBinary = 0x5036;
 
+        private EndianBinaryReader reader;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PixMapReader"/> class.
+        /// </summary>
+        /// <param name="stream">The stream.</param>
+        /// <param name="leaveOpen">
+        /// <see langword="true"/> if the stream should be left open when the class is disposed; otherwise, <see langword="false"/>.
+        /// </param>
+        /// <exception cref="ArgumentNullException"><paramref name="stream"/> is null.</exception>
+        public PixMapReader(Stream stream, bool leaveOpen)
+        {
+            // LibRaw always writes PNM files using big-endian byte order.
+            reader = new EndianBinaryReader(stream, Endianess.Big, leaveOpen);
+        }
+
+        /// <summary>
+        /// Decodes a PNM file.
+        /// </summary>
+        /// <returns>A single layer Document containing the decoded image.</returns>
+        /// <exception cref="FormatException">
+        /// The file is not a supported format.
+        /// -or-
+        /// The image dimensions are invalid.
+        /// -or-
+        /// The file uses an unsupported color depth.
+        /// </exception>
+        /// <exception cref="ObjectDisposedException">The class has been disposed.</exception>
+        public Document DecodePNM()
+        {
+            if (reader is null)
+            {
+                throw new ObjectDisposedException(nameof(PixMapReader));
+            }
+
+            ushort format = reader.ReadUInt16();
+            if (format != GrayscaleBinary && format != ColorBinary)
+            {
+                throw new FormatException("The file is not a supported format.");
+            }
+
+            int width = ReadASCIIEncodedInt32();
+            int height = ReadASCIIEncodedInt32();
+
+            if (width < 1 || height < 1)
+            {
+                throw new FormatException("The image dimensions are invalid.");
+            }
+
+            int maxValue = ReadASCIIEncodedInt32();
+            if (maxValue != 255 && maxValue != 65535)
+            {
+                throw new FormatException("The file uses an unsupported color depth.");
+            }
+
+            bool sixteenBit = maxValue == 65535;
+
+            Document document = null;
+            Document tempDocument = null;
+
+            try
+            {
+                tempDocument = new Document(width, height);
+
+                if (format == ColorBinary)
+                {
+                    tempDocument.Layers.Add(DecodeColor(width, height, sixteenBit));
+                }
+                else
+                {
+                    tempDocument.Layers.Add(DecodeGrayScale(width, height, sixteenBit));
+                }
+
+                document = tempDocument;
+                tempDocument = null;
+            }
+            finally
+            {
+                if (tempDocument != null)
+                {
+                    tempDocument.Dispose();
+                    tempDocument = null;
+                }
+            }
+
+            return document;
+        }
+
+        public void Dispose()
+        {
+            if (reader != null)
+            {
+                reader.Dispose();
+                reader = null;
+            }
+        }
+
         /// <summary>
         /// Gets the next non-comment character from the stream.
         /// </summary>
-        /// <param name="stream">The stream.</param>
         /// <returns>The next non-comment character read from the current stream.</returns>
         /// <exception cref="EndOfStreamException">The end of the stream is reached.</exception>
-        private static char GetNextChar(Stream stream)
+        private char GetNextChar()
         {
-            int next = stream.ReadByte();
-
-            if (next == -1)
-            {
-                throw new EndOfStreamException();
-            }
-
-            char value = (char)next;
+            char value = (char)reader.ReadByte();
 
             // Skip any comments.
             if (value == '#')
             {
                 do
                 {
-                    next = stream.ReadByte();
-
-                    if (next == -1)
-                    {
-                        throw new EndOfStreamException();
-                    }
-                    value = (char)next;
+                    value = (char)reader.ReadByte();
 
                 } while (value != '\r' && value != '\n');
             }
@@ -59,15 +142,14 @@ namespace RawFileTypePlugin
         /// <summary>
         /// Gets the next character from the stream that is not white space.
         /// </summary>
-        /// <param name="stream">The stream.</param>
         /// <returns>The next character from the stream that is not white space.</returns>
-        private static char GetNextNonWhiteSpaceChar(Stream stream)
+        private char GetNextNonWhiteSpaceChar()
         {
             char value;
 
             do
             {
-                value = GetNextChar(stream);
+                value = GetNextChar();
             } while (char.IsWhiteSpace(value));
 
             return value;
@@ -76,12 +158,11 @@ namespace RawFileTypePlugin
         /// <summary>
         /// Reads an ASCII encoded decimal number from the stream.
         /// </summary>
-        /// <param name="stream">The stream.</param>
         /// <returns>A 4-byte signed integer read from the current stream.</returns>
         /// <exception cref="FormatException">Expected a decimal number.</exception>
-        private static int ReadASCIIEncodedInt32(Stream stream)
+        private int ReadASCIIEncodedInt32()
         {
-            char ch = GetNextNonWhiteSpaceChar(stream);
+            char ch = GetNextNonWhiteSpaceChar();
 
             if (ch < '0' || ch > '9')
             {
@@ -94,51 +175,10 @@ namespace RawFileTypePlugin
             {
                 int temp = ch - '0';
                 value = (value * 10) + temp;
-                ch = GetNextChar(stream);
+                ch = GetNextChar();
             } while (ch >= '0' && ch <= '9');
 
             return value;
-        }
-
-        /// <summary>
-        /// Reads the next byte from the stream.
-        /// </summary>
-        /// <param name="stream">The stream.</param>
-        /// <returns>The next byte read from the current stream.</returns>
-        /// <exception cref="EndOfStreamException">The end of the stream is reached.</exception>
-        private static byte ReadByte(Stream stream)
-        {
-            int value = stream.ReadByte();
-
-            if (value == -1)
-            {
-                throw new EndOfStreamException();
-            }
-
-            return (byte)value;
-        }
-
-        /// <summary>
-        /// Reads a 2-byte unsigned integer from the stream in big endian byte order.
-        /// </summary>
-        /// <param name="stream">The stream.</param>
-        /// <returns>A 2-byte unsigned integer read from this stream.</returns>
-        /// <exception cref="EndOfStreamException">The end of the stream is reached.</exception>
-        private static ushort ReadUInt16BigEndian(Stream stream)
-        {
-            int byte1 = stream.ReadByte();
-            if (byte1 == -1)
-            {
-                throw new EndOfStreamException();
-            }
-
-            int byte2 = stream.ReadByte();
-            if (byte2 == -1)
-            {
-                throw new EndOfStreamException();
-            }
-
-            return (ushort)((byte1 << 8) + byte2);
         }
 
         /// <summary>
@@ -160,12 +200,11 @@ namespace RawFileTypePlugin
         /// <summary>
         /// Decodes the gray scale PixMap into a BitmapLayer.
         /// </summary>
-        /// <param name="stream">The stream.</param>
         /// <param name="width">The width of the image.</param>
         /// <param name="height">The height of the image.</param>
         /// <param name="sixteenBit"><c>true</c> if the image data is 16 bits-per-channel; otherwise, <c>false</c>.</param>
         /// <returns>A BitmapLayer containing the decoded image.</returns>
-        private static unsafe BitmapLayer DecodeGrayScale(Stream stream, int width, int height, bool sixteenBit)
+        private unsafe BitmapLayer DecodeGrayScale(int width, int height, bool sixteenBit)
         {
             BitmapLayer layer = null;
             BitmapLayer tempLayer = null;
@@ -184,7 +223,7 @@ namespace RawFileTypePlugin
                         ColorBgra* p = surface.GetRowAddressUnchecked(y);
                         for (int x = 0; x < width; x++)
                         {
-                            ushort value = ReadUInt16BigEndian(stream);
+                            ushort value = reader.ReadUInt16();
                             p->R = p->G = p->B = map[value];
                             p->A = 255;
 
@@ -199,7 +238,7 @@ namespace RawFileTypePlugin
                         ColorBgra* p = surface.GetRowAddressUnchecked(y);
                         for (int x = 0; x < width; x++)
                         {
-                            p->R = p->G = p->B = ReadByte(stream);
+                            p->R = p->G = p->B = reader.ReadByte();
                             p->A = 255;
 
                             p++;
@@ -225,12 +264,11 @@ namespace RawFileTypePlugin
         /// <summary>
         /// Decodes the color PixMap into a BitmapLayer.
         /// </summary>
-        /// <param name="stream">The stream.</param>
         /// <param name="width">The width of the image.</param>
         /// <param name="height">The height of the image.</param>
         /// <param name="sixteenBit"><c>true</c> if the image data is 16 bits-per-channel; otherwise, <c>false</c>.</param>
         /// <returns>A BitmapLayer containing the decoded image.</returns>
-        private static unsafe BitmapLayer DecodeColor(Stream stream, int width, int height, bool sixteenBit)
+        private unsafe BitmapLayer DecodeColor(int width, int height, bool sixteenBit)
         {
             BitmapLayer layer = null;
             BitmapLayer tempLayer = null;
@@ -249,9 +287,9 @@ namespace RawFileTypePlugin
                         ColorBgra* p = surface.GetRowAddressUnchecked(y);
                         for (int x = 0; x < width; x++)
                         {
-                            ushort red = ReadUInt16BigEndian(stream);
-                            ushort green = ReadUInt16BigEndian(stream);
-                            ushort blue = ReadUInt16BigEndian(stream);
+                            ushort red = reader.ReadUInt16();
+                            ushort green = reader.ReadUInt16();
+                            ushort blue = reader.ReadUInt16();
 
                             p->R = map[red];
                             p->G = map[green];
@@ -269,9 +307,9 @@ namespace RawFileTypePlugin
                         ColorBgra* p = surface.GetRowAddressUnchecked(y);
                         for (int x = 0; x < width; x++)
                         {
-                            p->R = ReadByte(stream);
-                            p->G = ReadByte(stream);
-                            p->B = ReadByte(stream);
+                            p->R = reader.ReadByte();
+                            p->G = reader.ReadByte();
+                            p->B = reader.ReadByte();
                             p->A = 255;
 
                             p++;
@@ -292,79 +330,6 @@ namespace RawFileTypePlugin
             }
 
             return layer;
-        }
-
-        /// <summary>
-        /// Decodes a PNM file.
-        /// </summary>
-        /// <param name="stream">The input stream.</param>
-        /// <returns>A single layer Document containing the decoded image.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="stream"/> is null.</exception>
-        /// <exception cref="FormatException">
-        /// The file is not a supported format.
-        /// -or-
-        /// The image dimensions are invalid.
-        /// -or-
-        /// The file uses an unsupported color depth.
-        /// </exception>
-        internal static Document DecodePNM(Stream stream)
-        {
-            if (stream == null)
-            {
-                throw new ArgumentNullException(nameof(stream));
-            }
-
-            ushort format = ReadUInt16BigEndian(stream);
-            if (format != GrayscaleBinary && format != ColorBinary)
-            {
-                throw new FormatException("The file is not a supported format.");
-            }
-
-            int width = ReadASCIIEncodedInt32(stream);
-            int height = ReadASCIIEncodedInt32(stream);
-
-            if (width < 1 || height < 1)
-            {
-                throw new FormatException("The image dimensions are invalid.");
-            }
-
-            int maxValue = ReadASCIIEncodedInt32(stream);
-            if (maxValue != 255 && maxValue != 65535)
-            {
-                throw new FormatException("The file uses an unsupported color depth.");
-            }
-
-            bool sixteenBit = maxValue == 65535;
-
-            Document document = null;
-            Document tempDocument = null;
-
-            try
-            {
-                tempDocument = new Document(width, height);
-
-                if (format == ColorBinary)
-                {
-                    tempDocument.Layers.Add(DecodeColor(stream, width, height, sixteenBit));
-                }
-                else
-                {
-                    tempDocument.Layers.Add(DecodeGrayScale(stream, width, height, sixteenBit));
-                }
-
-                document = tempDocument;
-                tempDocument = null;
-            }
-            finally
-            {
-                if (tempDocument != null)
-                {
-                    tempDocument.Dispose();
-                    tempDocument = null;
-                }
-            }
-
-            return document;
         }
     }
 }

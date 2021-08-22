@@ -99,7 +99,10 @@ namespace RawFileTypePlugin
                 }
                 else
                 {
-                    doc = PixMapReader.DecodePNM(process.StandardOutput.BaseStream);
+                    using (PixMapReader reader = new PixMapReader(process.StandardOutput.BaseStream, leaveOpen: true))
+                    {
+                        doc = reader.DecodePNM();
+                    }
                 }
 
                 process.WaitForExit();
