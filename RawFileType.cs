@@ -24,8 +24,6 @@ namespace RawFileTypePlugin
         private static readonly string ExecutablePath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "dcraw_emu.exe");
         private static readonly string OptionsFilePath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "RawFileTypeOptions.txt");
 
-        private const int BufferSize = 4096;
-
         public RawFileType() : base(
             "RAW File",
             FileTypeFlags.SupportsLoading,
@@ -118,10 +116,12 @@ namespace RawFileTypePlugin
             try
             {
                 // Write the input stream to a temporary file for LibRaw to load.
-                using (FileStream output = new FileStream(tempFile, FileMode.Create, FileAccess.Write, FileShare.None, BufferSize))
+                using (FileStream output = new FileStream(tempFile, FileMode.Create, FileAccess.Write, FileShare.None))
                 {
                     output.SetLength(input.Length);
-                    byte[] buffer = new byte[BufferSize];
+
+                    // 81920 is the largest multiple of 4096 that is under the large object heap limit (85,000 bytes).
+                    byte[] buffer = new byte[81920];
 
                     int bytesRead;
                     while ((bytesRead = input.Read(buffer, 0, buffer.Length)) > 0)
