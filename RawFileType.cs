@@ -118,7 +118,10 @@ namespace RawFileTypePlugin
                 // Write the input stream to a temporary file for LibRaw to load.
                 using (FileStream output = new FileStream(tempFile, FileMode.Create, FileAccess.Write, FileShare.None))
                 {
-                    output.SetLength(input.Length);
+                    if (input.CanSeek)
+                    {
+                        output.SetLength(input.Length);
+                    }
 
                     // 81920 is the largest multiple of 4096 that is under the large object heap limit (85,000 bytes).
                     byte[] buffer = new byte[81920];
