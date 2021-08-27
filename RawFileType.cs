@@ -27,7 +27,7 @@ namespace RawFileTypePlugin
         public RawFileType() : base(
             "RAW File",
             FileTypeFlags.SupportsLoading,
-            new string[] { ".3fr", ".arw", ".cr2", ".crw", ".dcr", ".dng", ".erf", ".kc2", ".kdc", ".mdc", ".mef", ".mos", ".mrw",
+            new string[] { ".3fr", ".arw", ".cr2", ".cr3", ".crw", ".dcr", ".dng", ".erf", ".kc2", ".kdc", ".mdc", ".mef", ".mos", ".mrw",
                            ".nef", ".nrw", ".orf", ".pef", ".ptx", ".pxn", ".raf", ".raw", ".rw2", ".sr2", ".srf", ".srw", ".x3f" })
         {
         }
