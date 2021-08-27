@@ -5,7 +5,7 @@ A [LibRaw](https://github.com/LibRaw/LibRaw)-based camera raw filetype plugin fo
 ## How to install the plugin
 
 1. Close Paint.NET.
-2. Place RawFileType.dll, dcraw_emu.exe and RawFileTypeOptions.txt in the Paint.NET FileTypes folder which is usually located in one the following locations depending on the Paint.NET version you have installed.
+2. Place RawFileType.dll, RawFileTypeOptions.txt and the LibRaw folder in the Paint.NET FileTypes folder which is usually located in one the following locations depending on the Paint.NET version you have installed.
 
   Paint.NET Version |  FileTypes Folder Location
   --------|----------
