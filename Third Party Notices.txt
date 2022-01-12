@@ -6,9 +6,9 @@ The attached notices are provided for information only.
 License notice for LibRaw
 -------------------------------
 
- ** LibRaw: Raw images processing library **
+** LibRaw: Raw images processing library **
 
-Copyright (C) 2008-2020 LibRaw LLC (http://www.libraw.org, info@libraw.org)
+Copyright (C) 2008-2021 LibRaw LLC (http://www.libraw.org, info@libraw.org)
  
 LibRaw is free software; you can redistribute it and/or modify
 it under the terms of the one of two licenses as you choose:
