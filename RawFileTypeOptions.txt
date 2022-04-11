@@ -2,6 +2,6 @@
 ; Lines that start with a semicolon are comments.
 ; The list of options for DCRaw is available at https://www.dechifro.org/dcraw/dcraw.1.html
 ; The list of options supported by dcraw-emu is available at https://www.libraw.org/docs/Samples-LibRaw.html
-; The default settings are to the camera white balance (-w) and AHD interpolation (-q 3).
+; The default settings are to use the camera white balance (-w) and AHD interpolation (-q 3).
 ; All parameters must be placed on a single line separated by spaces.
 -w -q 3
