@@ -21,8 +21,8 @@ namespace RawFileTypePlugin
     [PluginSupportInfo(typeof(PluginSupportInfo))]
     public sealed class RawFileType : FileType
     {
-        private static readonly string ExecutablePath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "LibRaw\\dcraw_emu.exe");
-        private static readonly string OptionsFilePath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "RawFileTypeOptions.txt");
+        private static readonly string ExecutablePath = Path.Combine(Path.GetDirectoryName(typeof(RawFileType).Assembly.Location), "LibRaw\\dcraw_emu.exe");
+        private static readonly string OptionsFilePath = Path.Combine(Path.GetDirectoryName(typeof(RawFileType).Assembly.Location), "RawFileTypeOptions.txt");
 
         private readonly IFileTypeHost host;
 
