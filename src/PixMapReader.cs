@@ -220,7 +220,7 @@ namespace RawFileTypePlugin
 
                     for (int y = 0; y < height; y++)
                     {
-                        ColorBgra* p = surface.GetRowAddressUnchecked(y);
+                        ColorBgra* p = surface.GetRowPointerUnchecked(y);
                         for (int x = 0; x < width; x++)
                         {
                             ushort value = reader.ReadUInt16();
@@ -235,7 +235,7 @@ namespace RawFileTypePlugin
                 {
                     for (int y = 0; y < height; y++)
                     {
-                        ColorBgra* p = surface.GetRowAddressUnchecked(y);
+                        ColorBgra* p = surface.GetRowPointerUnchecked(y);
                         for (int x = 0; x < width; x++)
                         {
                             p->R = p->G = p->B = reader.ReadByte();
@@ -284,7 +284,7 @@ namespace RawFileTypePlugin
 
                     for (int y = 0; y < height; y++)
                     {
-                        ColorBgra* p = surface.GetRowAddressUnchecked(y);
+                        ColorBgra* p = surface.GetRowPointerUnchecked(y);
                         for (int x = 0; x < width; x++)
                         {
                             ushort red = reader.ReadUInt16();
@@ -304,7 +304,7 @@ namespace RawFileTypePlugin
                 {
                     for (int y = 0; y < height; y++)
                     {
-                        ColorBgra* p = surface.GetRowAddressUnchecked(y);
+                        ColorBgra* p = surface.GetRowPointerUnchecked(y);
                         for (int x = 0; x < width; x++)
                         {
                             p->R = reader.ReadByte();
