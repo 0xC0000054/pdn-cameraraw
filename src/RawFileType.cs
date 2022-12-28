@@ -10,9 +10,9 @@
 /////////////////////////////////////////////////////////////////////////////////
 
 using PaintDotNet;
+using PaintDotNet.AppModel;
 using System;
 using System.Diagnostics;
-using System.Drawing;
 using System.IO;
 using System.Reflection;
 
@@ -24,7 +24,9 @@ namespace RawFileTypePlugin
         private static readonly string ExecutablePath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "LibRaw\\dcraw_emu.exe");
         private static readonly string OptionsFilePath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "RawFileTypeOptions.txt");
 
-        public RawFileType() : base(
+        private readonly IFileTypeHost host;
+
+        public RawFileType(IFileTypeHost host) : base(
             "RAW File",
             new FileTypeOptions()
             {
@@ -33,6 +35,7 @@ namespace RawFileTypePlugin
                 SaveExtensions = Array.Empty<string>()
             })
         {
+            this.host = host;
         }
 
         private static string RemoveCommentsAndWhiteSpace(string line)
@@ -69,22 +72,34 @@ namespace RawFileTypePlugin
             return options;
         }
 
-        private static Document GetRAWImageDocument(string file)
+        private Document GetRAWImageDocument(string file)
         {
             Document doc = null;
 
             string options = GetDCRawOptions();
-            // Set the -Z - option to tell the LibRaw dcraw-emu example program
+
+            string outputImagePath = string.Empty;
+            bool useTIFF = options.Contains("-T");
+
+            if (useTIFF)
+            {
+                // WIC requires a stream that supports seeking, so we save the image to a temporary file.
+                outputImagePath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            }
+
+            // The - output file name instructs the LibRaw dcraw-emu example program
             // that the image data should be written to standard output.
-            string arguments = string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0} -Z - \"{1}\"", options, file);
+            string arguments = string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                                             "{0} -Z {1} \"{2}\"",
+                                             options,
+                                             useTIFF ? "\"" + outputImagePath + "\"" : "-",
+                                             file);
             ProcessStartInfo startInfo = new ProcessStartInfo(ExecutablePath, arguments)
             {
                 UseShellExecute = false,
                 CreateNoWindow = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true
+                RedirectStandardOutput = !useTIFF
             };
-            bool useTIFF = options.Contains("-T");
 
             using (Process process = new Process())
             {
@@ -93,9 +108,32 @@ namespace RawFileTypePlugin
 
                 if (useTIFF)
                 {
-                    using (Bitmap image = new Bitmap(process.StandardOutput.BaseStream))
+                    process.WaitForExit();
+
+                    FileStreamOptions fileStreamOptions = new FileStreamOptions
                     {
-                        doc = Document.FromImage(image);
+                        Mode = FileMode.Open,
+                        Access = FileAccess.Read,
+                        Share = FileShare.Read,
+                        Options = FileOptions.DeleteOnClose
+                    };
+
+                    using (FileStream stream = new(outputImagePath, fileStreamOptions))
+                    {
+                        IFileTypesService fileTypesService = host.Services.GetService<IFileTypesService>();
+
+                        IFileTypeInfo tiffFileTypeInfo = fileTypesService?.FindFileTypeForLoadingExtension(".tif");
+
+                        if (tiffFileTypeInfo != null)
+                        {
+                            FileType tiffFileType = tiffFileTypeInfo.GetInstance();
+
+                            doc = tiffFileType.Load(stream);
+                        }
+                        else
+                        {
+                            throw new FormatException($"Failed to get the {nameof(IFileTypeInfo)} for the TIFF FileType.");
+                        }
                     }
                 }
                 else
@@ -104,9 +142,9 @@ namespace RawFileTypePlugin
                     {
                         doc = reader.DecodePNM();
                     }
-                }
 
-                process.WaitForExit();
+                    process.WaitForExit();
+                }
             }
 
             return doc;
