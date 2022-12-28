@@ -55,7 +55,7 @@ namespace RawFileTypePlugin
         {
             string options = string.Empty;
 
-            using (StreamReader reader = new StreamReader(OptionsFilePath, System.Text.Encoding.UTF8))
+            using (StreamReader reader = new(OptionsFilePath, System.Text.Encoding.UTF8))
             {
                 string line;
                 while ((line = reader.ReadLine()) != null)
@@ -94,14 +94,14 @@ namespace RawFileTypePlugin
                                              options,
                                              useTIFF ? "\"" + outputImagePath + "\"" : "-",
                                              file);
-            ProcessStartInfo startInfo = new ProcessStartInfo(ExecutablePath, arguments)
+            ProcessStartInfo startInfo = new(ExecutablePath, arguments)
             {
                 UseShellExecute = false,
                 CreateNoWindow = true,
                 RedirectStandardOutput = !useTIFF
             };
 
-            using (Process process = new Process())
+            using (Process process = new())
             {
                 process.StartInfo = startInfo;
                 process.Start();
@@ -110,7 +110,7 @@ namespace RawFileTypePlugin
                 {
                     process.WaitForExit();
 
-                    FileStreamOptions fileStreamOptions = new FileStreamOptions
+                    FileStreamOptions fileStreamOptions = new()
                     {
                         Mode = FileMode.Open,
                         Access = FileAccess.Read,
@@ -138,7 +138,7 @@ namespace RawFileTypePlugin
                 }
                 else
                 {
-                    using (PixMapReader reader = new PixMapReader(process.StandardOutput.BaseStream, leaveOpen: true))
+                    using (PixMapReader reader = new(process.StandardOutput.BaseStream, leaveOpen: true))
                     {
                         doc = reader.DecodePNM();
                     }
@@ -157,7 +157,7 @@ namespace RawFileTypePlugin
             try
             {
                 // Write the input stream to a temporary file for LibRaw to load.
-                using (FileStream output = new FileStream(tempFile, FileMode.Create, FileAccess.Write, FileShare.None))
+                using (FileStream output = new(tempFile, FileMode.Create, FileAccess.Write, FileShare.None))
                 {
                     if (input.CanSeek)
                     {
