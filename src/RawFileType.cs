@@ -10,11 +10,9 @@
 /////////////////////////////////////////////////////////////////////////////////
 
 using PaintDotNet;
-using PaintDotNet.AppModel;
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Reflection;
 
 namespace RawFileTypePlugin
 {
