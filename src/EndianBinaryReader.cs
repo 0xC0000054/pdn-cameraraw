@@ -211,14 +211,7 @@ namespace RawFileTypePlugin
         /// <exception cref="ObjectDisposedException">The object has been disposed.</exception>
         public byte ReadByte()
         {
-            VerifyNotDisposed();
-
-            EnsureBuffer(sizeof(byte));
-
-            byte val = buffer[readOffset];
-            readOffset += sizeof(byte);
-
-            return val;
+            return readOffset < readLength ? buffer[readOffset++] : ReadByteSlow();
         }
 
         /// <summary>
@@ -513,6 +506,21 @@ namespace RawFileTypePlugin
 
             readOffset = 0;
             readLength = numBytesRead;
+        }
+
+        /// <summary>
+        /// Reads the next byte from the current stream.
+        /// </summary>
+        /// <returns>The next byte read from the current stream.</returns>
+        /// <exception cref="EndOfStreamException">The end of the stream has been reached.</exception>
+        /// <exception cref="ObjectDisposedException">The object has been disposed.</exception>
+        private byte ReadByteSlow()
+        {
+            VerifyNotDisposed();
+
+            FillBuffer(sizeof(byte));
+
+            return buffer[readOffset++];
         }
 
         /// <summary>
