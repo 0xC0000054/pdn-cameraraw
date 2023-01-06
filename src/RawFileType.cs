@@ -165,14 +165,7 @@ namespace RawFileTypePlugin
 
                 using (FileStream output = new(tempFile, fileStreamOptions))
                 {
-                    // 81920 is the largest multiple of 4096 that is under the large object heap limit (85,000 bytes).
-                    byte[] buffer = new byte[81920];
-
-                    int bytesRead;
-                    while ((bytesRead = input.Read(buffer, 0, buffer.Length)) > 0)
-                    {
-                        output.Write(buffer, 0, bytesRead);
-                    }
+                    input.CopyTo(output);
                 }
 
                 doc = GetRAWImageDocument(tempFile);
