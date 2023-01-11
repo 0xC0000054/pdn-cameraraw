@@ -13,11 +13,11 @@ using PaintDotNet;
 
 namespace RawFileTypePlugin
 {
-    public sealed class RawFileTypeFactory : IFileTypeFactory
+    public sealed class RawFileTypeFactory : IFileTypeFactory2
     {
-        public FileType[] GetFileTypeInstances()
+        public FileType[] GetFileTypeInstances(IFileTypeHost host)
         {
-            return new FileType[] { new RawFileType() };
+            return new FileType[] { new RawFileType(host) };
         }
     }
 }
