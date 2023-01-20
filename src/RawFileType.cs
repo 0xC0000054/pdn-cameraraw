@@ -75,48 +75,53 @@ namespace RawFileTypePlugin
             Document doc = null;
 
             string options = GetDCRawOptions();
-
-            string outputImagePath = string.Empty;
             bool useTIFF = options.Contains("-T");
 
-            if (useTIFF)
-            {
-                // WIC requires a stream that supports seeking, so we save the image to a temporary file.
-                outputImagePath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-            }
+            // The processed image is saved to a temporary file to allow us to read the process exit code
+            // and standard error output.
+            string outputImagePath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
 
-            // The - output file name instructs the LibRaw dcraw-emu example program
-            // that the image data should be written to standard output.
             string arguments = string.Format(System.Globalization.CultureInfo.InvariantCulture,
-                                             "{0} -Z {1} \"{2}\"",
+                                             "{0} -Z \"{1}\" \"{2}\"",
                                              options,
-                                             useTIFF ? "\"" + outputImagePath + "\"" : "-",
+                                             outputImagePath,
                                              file);
             ProcessStartInfo startInfo = new(ExecutablePath, arguments)
             {
                 UseShellExecute = false,
                 CreateNoWindow = true,
-                RedirectStandardOutput = !useTIFF
+                RedirectStandardError = true
             };
 
             using (Process process = new())
             {
                 process.StartInfo = startInfo;
                 process.Start();
+                process.WaitForExit();
 
-                if (useTIFF)
+                if (process.ExitCode != 0)
                 {
-                    process.WaitForExit();
+                    string error = process.StandardError.ReadToEnd();
 
-                    FileStreamOptions fileStreamOptions = new()
+                    if (string.IsNullOrWhiteSpace(error))
                     {
-                        Mode = FileMode.Open,
-                        Access = FileAccess.Read,
-                        Share = FileShare.Read,
-                        Options = FileOptions.DeleteOnClose
-                    };
+                        error = $"dcraw_emu returned exit code {process.ExitCode}.";
+                    }
 
-                    using (FileStream stream = new(outputImagePath, fileStreamOptions))
+                    throw new FormatException(error);
+                }
+
+                FileStreamOptions fileStreamOptions = new()
+                {
+                    Mode = FileMode.Open,
+                    Access = FileAccess.Read,
+                    Share = FileShare.Read,
+                    Options = FileOptions.DeleteOnClose
+                };
+
+                using (FileStream stream = new(outputImagePath, fileStreamOptions))
+                {
+                    if (useTIFF)
                     {
                         IFileTypesService fileTypesService = host.Services.GetService<IFileTypesService>();
 
@@ -133,15 +138,13 @@ namespace RawFileTypePlugin
                             throw new FormatException($"Failed to get the {nameof(IFileTypeInfo)} for the TIFF FileType.");
                         }
                     }
-                }
-                else
-                {
-                    using (PixMapReader reader = new(process.StandardOutput.BaseStream, leaveOpen: true))
+                    else
                     {
-                        doc = reader.DecodePNM();
+                        using (PixMapReader reader = new(stream, leaveOpen: true))
+                        {
+                            doc = reader.DecodePNM();
+                        }
                     }
-
-                    process.WaitForExit();
                 }
             }
 
