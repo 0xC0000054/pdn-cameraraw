@@ -119,6 +119,13 @@ namespace RawFileTypePlugin
                     Options = FileOptions.DeleteOnClose
                 };
 
+                if (!useTIFF)
+                {
+                    // The PixMapReader performs its own buffering and uses sequential reads.
+                    fileStreamOptions.BufferSize = 1;
+                    fileStreamOptions.Options |= FileOptions.SequentialScan;
+                }
+
                 using (FileStream stream = new(outputImagePath, fileStreamOptions))
                 {
                     if (useTIFF)
